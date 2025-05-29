@@ -1,35 +1,36 @@
 import multiprocessing
 import time
-import math
+import random
+import string
 
-def calculate_chunk(data_chunk):
-    return sum(x**2 for x in data_chunk)
-
-def split_data(data, num_parts):
-    n = len(data)
-    chunk_size = math.ceil(n / num_parts)
-    return [data[i*chunk_size : min((i+1)*chunk_size, n)] 
-            for i in range(num_parts)]
-
-if __name__ == "__main__": 
-    data = list(range(100_000_000)) 
-    # Синхронное вычисление
-    start = time.time()
-    result = calculate_chunk(data)
-    sync_time = time.time() - start
-    print(f"Синхронное вычисление: {sync_time:.2f} сек")
-
-    # Многопроцессорное вычисление
-    num_processes = 20
+def write_file(lock, file_name, num_chars):
+    # Записывает случайные символы в один файл без конфликтов
+    random_chars = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(num_chars))
+    
+    with lock: 
+        with open(file_name, "a") as f:
+            f.write(random_chars )
+            
+# 10 - количество процессов, ограничиваем количество случайных символов: их будет 100
+def record (file_name="parent_file.txt", quantity_process=10, quantity__chars=100):
+    lock = multiprocessing.Lock() 
+    
+    spisok_process = []
     start = time.time()
     
-    # Надежное разделение данных
-    chunks = split_data(data, num_processes)
-    
-    with multiprocessing.Pool(processes=num_processes) as pool:
-        results = pool.map(calculate_chunk, chunks)
-        result_parallel = sum(results)
-    
-    mp_time = time.time() - start
-    print(f"Многопроцессорное вычисление: {mp_time:.2f} сек")
-    print(f"Результаты совпадают: {result == result_parallel}")
+    for _ in range(quantity_process):
+        new_process = multiprocessing.Process(target=write_file, args=(lock, file_name, quantity__chars))
+        new_process.start()
+        spisok_process.append(new_process)
+
+    for p in spisok_process:
+        p.join()
+
+    delta= time.time() - start
+    print(f"Время синхронизации: {delta} ")
+
+if __name__ == "__main__":
+    record()
+
+
+

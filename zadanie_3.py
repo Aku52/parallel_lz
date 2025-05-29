@@ -1,27 +1,17 @@
 import asyncio
-import aiohttp
-import time
+import random
 
-urls = ["https://httpbin.org/get"] * 10  # 10 одинаковых запросов для примера
+async def read_file(file_name):
+    
+    delay = random.uniform(0.1, 5) 
+    await asyncio.sleep(delay) 
+    print(f"Файл {file_name} прочитан за {delay}")
 
-# Синхронные запросы
-def sync_requests():
-    import requests
-    start = time.time()
-    for url in urls:
-        requests.get(url).status_code
-    return time.time() - start
+async def create_read():
+    quantity_files = 10  
+    tasks = [read_file(f"file_{i}.txt") for i in range(quantity_files)]
+    await asyncio.gather(*tasks)
 
-# Асинхронные запросы
-async def async_requests():
-    async with aiohttp.ClientSession() as session:
-        tasks = []
-        start = time.time()
-        for url in urls:
-            tasks.append(session.get(url))
-        responses = await asyncio.gather(*tasks)
-        return time.time() - start
+# Запуск асинхронного чтения
+asyncio.run(create_read())
 
-# Запуск
-print(f"Синхронные запросы: {sync_requests():.2f} сек")
-print(f"Асинхронные запросы: {asyncio.run(async_requests()):.2f} сек")
